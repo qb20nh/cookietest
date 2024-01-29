@@ -15,8 +15,8 @@
     <script>
         const doTry = (fn, resort) => {try {return fn()} catch {return resort}}
         const allParams = Object.fromEntries([...new URL(location).searchParams].map(([k, v])=>[k, doTry(()=>JSON.parse(`${v}`), v)]))
-        const {httpOnly, sameSite, secure} = allParams;
-        const requiredParams = new URLSearchParams({httpOnly, sameSite, secure})
+        const {httpOnly, sameSite, secure, domain} = allParams;
+        const requiredParams = new URLSearchParams({httpOnly, sameSite, secure, domain})
         const SERVER = 'https://server.d0p.dev'
         const loginUrl = new URL(`${SERVER}/login`)
         for (let [key, value] of requiredParams) {

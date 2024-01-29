@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
-import { HTTP, equals } from '@/util'
+import { HTTP, equals, type boolstr } from '@/util'
 import { allowedClientOrigins } from 'allowlist.json'
 
 const server = fastify()
@@ -28,8 +28,16 @@ server.get('/login', async (request, reply) => {
       return
     }
 
-    const p = request.query as { httpOnly: 'true' | 'false', sameSite: 'lax' | 'strict' | 'none', secure: 'true' | 'false' }
-    if (p.httpOnly === undefined || p.sameSite === undefined || p.secure === undefined) {
+    const p = request.query as {
+      httpOnly: boolstr,
+      sameSite: 'lax' | 'strict' | 'none',
+      secure: boolstr,
+      domain: boolstr
+    }
+    if (p.httpOnly === undefined
+      || p.sameSite === undefined
+      || p.secure === undefined
+      || p.domain === undefined) {
       void reply.code(HTTP.BAD_REQUEST).send('⚠️ Required fields missing')
       return
     }
@@ -37,7 +45,11 @@ server.get('/login', async (request, reply) => {
     const httpOnly = JSON.parse(p.httpOnly)
     const sameSite = p.sameSite
     const secure = JSON.parse(p.secure)
-    if (typeof httpOnly !== 'boolean' || !['lax', 'strict', 'none'].includes(sameSite) || typeof secure !== 'boolean') {
+    const domain = JSON.parse(p.domain)
+    if (typeof httpOnly !== 'boolean'
+    || !['lax', 'strict', 'none'].includes(sameSite)
+    || typeof secure !== 'boolean'
+    || typeof domain !== 'boolean') {
       void reply.code(HTTP.BAD_REQUEST).send('⚠️ Invalid flag value')
       return
     }
@@ -45,7 +57,9 @@ server.get('/login', async (request, reply) => {
     void reply.code(HTTP.OK).cookie('token', 'secret', {
       httpOnly,
       sameSite,
-      secure
+      secure,
+      domain: domain ? 'server.d0p.dev' : undefined,
+      path: '/',
     }).send('✅ Auth info set')
   } finally {
     void reply.code(HTTP.INTERNAL_SERVER_ERROR).send('❌ Internal server error')
