@@ -13,7 +13,8 @@
 <body>
     <script>html`<h1>Current origin is ${location.origin}</h1>`</script>
     <script>
-        const allParams = Object.fromEntries([...new URL(location).searchParams].map(([k, v])=>[k, JSON.parse(`${v}`)]))
+        const doTry = (fn, resort) => {try {return fn()} catch {return resort}}
+        const allParams = Object.fromEntries([...new URL(location).searchParams].map(([k, v])=>[k, doTry(()=>JSON.parse(`${v}`), v)]))
         const {httpOnly, sameSite, secure} = allParams;
         const requiredParams = new URLSearchParams({httpOnly, sameSite, secure})
         const SERVER = 'https://server.d0p.dev'
