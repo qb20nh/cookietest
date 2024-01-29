@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client test</title>
+    <script>
+    const html = ([...a], ...b) => {
+        document.currentScript.outerHTML = Array.from({length: a.length + b.length}, (_, i) => [a, b][i % 2][i / 2 | 0]).join('');
+    }
+    </script>
+</head>
+<body>
+    <script>html`<h1>Current origin is ${location.origin}</h1>`</script>
+    <script>
+        const allParams = Object.fromEntries([...new URL(location).searchParams].map(([k, v])=>[k, JSON.parse(`${v}`)]))
+        const {httpOnly, sameSite, secure} = allParams;
+        const requiredParams = new URLSearchParams({httpOnly, sameSite, secure})
+        const SERVER = 'https://server.d0p.dev'
+        const loginUrl = new URL(`${SERVER}/login`)
+        loginUrl.searchParams = requiredParams
+        const verifyUrl = new URL(`${SERVER}/verify`)
+
+        let isServerLoggedIn = false;
+        const tryLogin = async () => {
+            try {
+                const resp = await fetch(loginUrl)
+                const status = `${resp.status} ${resp.statusText}`
+                code.innerHTML = status
+                const text = await resp.text()
+                body.innerHTML = text
+                isServerLoggedIn = resp.ok
+            } catch(e) {
+                error.innerHTML = e
+            }
+        }
+
+        const tryVerify = async () =>{
+            if (!isServerLoggedIn) {
+                result.innerHTML = 'Try loggin in first'
+                return
+            }
+            const resp = await fetch(verifyUrl)
+            document.title = resp.ok ? 'OK' : 'FAIL'
+            const text = await resp.text()
+            result.innerHTML = text
+        }
+
+        setTimeout(() => {
+            const registerEvents = () => {
+                login.addEventListener('click', tryLogin)
+                verify.addEventListener('click', tryVerify)
+            }
+            if (document.readyState !== 'loading') {
+                registerEvents()
+            } else {
+                document.addEventListener('DOMContentLoaded', registerEvents)
+            }
+        })
+
+        html`
+        <div>Parameters:</div>
+        <table>
+            ${[...requiredParams].map(([k, v]) => {
+                return /*html*/`
+                <tr>
+                    <th>${k}</th>
+                    <td>${v}</td>
+                </tr>
+                `
+            }).join('')}
+        </table>
+        <button id="login">Login</button>
+        <div>Code: <output id="code"></output></div>
+        <div>Body: <output id="body"></output></div>
+        <div>Error: <output id="error"></output></div>
+        <hr>
+        <button id="verify">Verify</button>
+        <div>RESULT: <output id="result"></output></div>
+        `
+    </script>
+</body>
+</html>
