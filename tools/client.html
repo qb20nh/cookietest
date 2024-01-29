@@ -19,7 +19,9 @@
         const requiredParams = new URLSearchParams({httpOnly, sameSite, secure})
         const SERVER = 'https://server.d0p.dev'
         const loginUrl = new URL(`${SERVER}/login`)
-        loginUrl.searchParams = requiredParams
+        for (let [key, value] of requiredParams) {
+            loginUrl.searchParams.append(key, value);
+        }
         const verifyUrl = new URL(`${SERVER}/verify`)
 
         let isServerLoggedIn = false;
