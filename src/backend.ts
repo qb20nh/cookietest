@@ -2,12 +2,11 @@ import fastify from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import { HTTP, equals } from '@/util'
+import { allowedClientOrigins } from 'allowlist.json'
 
 const server = fastify()
 
 void server.register(cookie)
-
-const allowedClientOrigins = ['http://client-test.app.local:5500', 'http://client-test.local:5500', 'http://localhost:5500', 'https://qb20nh.github.io']
 
 void server.register(cors, {
   origin: allowedClientOrigins,
@@ -29,13 +28,15 @@ server.get('/login', async (request, reply) => {
       return
     }
 
-    const p = request.query as { httpOnly: boolean, sameSite: 'lax' | 'strict' | 'none', secure: boolean }
+    const p = request.query as { httpOnly: 'true' | 'false', sameSite: 'lax' | 'strict' | 'none', secure: 'true' | 'false' }
     if (p.httpOnly === undefined || p.sameSite === undefined || p.secure === undefined) {
       void reply.code(HTTP.BAD_REQUEST).send('⚠️ Required fields missing')
       return
     }
 
-    const { httpOnly, sameSite, secure } = p
+    const httpOnly = JSON.parse(p.httpOnly)
+    const sameSite = p.sameSite
+    const secure = JSON.parse(p.secure)
     if (typeof httpOnly !== 'boolean' || !['lax', 'strict', 'none'].includes(sameSite) || typeof secure !== 'boolean') {
       void reply.code(HTTP.BAD_REQUEST).send('⚠️ Invalid flag value')
       return
